@@ -8,15 +8,23 @@ if (!MONGODB_URI) {
   )
 }
 
-let cached = global.mongoose
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null }
+// Define the global type
+declare global {
+  var mongoose: {
+    conn: typeof mongoose | null
+    promise: Promise<typeof mongoose> | null
+  }
 }
 
-async function connectDB() {
+let cached = global.mongoose || { conn: null, promise: null }
+
+if (!global.mongoose) {
+  global.mongoose = cached
+}
+
+export async function connectToDatabase() {
   if (cached.conn) {
-    return cached.conn
+    return { db: cached.conn }
   }
 
   if (!cached.promise) {
@@ -31,12 +39,12 @@ async function connectDB() {
 
   try {
     cached.conn = await cached.promise
+    return { db: cached.conn }
   } catch (e) {
     cached.promise = null
-    throw e
+    console.error('MongoDB connection error:', e)
+    return { db: null }
   }
-
-  return cached.conn
 }
 
-export default connectDB 
+export default connectToDatabase 

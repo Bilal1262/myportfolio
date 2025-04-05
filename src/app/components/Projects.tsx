@@ -16,6 +16,47 @@ interface Project {
   _id: string
 }
 
+// Initial projects data
+const initialProjects: Project[] = [
+  {
+    title: "Robotic Arm Control System",
+    description: "A 6-DOF robotic arm control system with inverse kinematics and real-time trajectory planning. Implemented using ROS2 and Python.",
+    technologies: ["ROS2", "Python", "C++", "OpenCV"],
+    image: "/projects/robotic-arm.jpg",
+    githubLink: "https://github.com/yourusername/robotic-arm",
+    category: "robotics",
+    _id: "1"
+  },
+  {
+    title: "Differential Drive Robot Navigation",
+    description: "Autonomous navigation system for a differential drive robot with LIDAR-based SLAM and obstacle avoidance.",
+    technologies: ["ROS", "Navigation2", "SLAM", "Python"],
+    image: "/projects/diff-drive.jpg",
+    githubLink: "https://github.com/yourusername/diff-drive-robot",
+    category: "robotics",
+    _id: "2"
+  },
+  {
+    title: "AI-Powered Object Detection",
+    description: "Real-time object detection system using deep learning, optimized for robotics applications.",
+    technologies: ["PyTorch", "TensorFlow", "CUDA", "Python"],
+    image: "/projects/object-detection.jpg",
+    githubLink: "https://github.com/yourusername/object-detection",
+    category: "ai",
+    _id: "3"
+  },
+  {
+    title: "3D Robot Visualization",
+    description: "Interactive 3D visualization of robotic systems using Three.js and React, featuring real-time animation and control.",
+    technologies: ["React", "Three.js", "TypeScript", "WebGL"],
+    image: "/projects/3d-viz.jpg",
+    demoLink: "https://your-demo-link.com",
+    githubLink: "https://github.com/yourusername/3d-robot-viz",
+    category: "web",
+    _id: "4"
+  }
+]
+
 function AddProjectForm({ onAdd, onClose }: { onAdd: (project: Project) => void, onClose: () => void }) {
   const [formData, setFormData] = React.useState<Partial<Project>>({
     category: 'web',
@@ -308,7 +349,7 @@ export default function Projects() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = React.useState<'all' | Project['category']>('all')
   const [showAddForm, setShowAddForm] = React.useState(false)
-  const [projectsList, setProjectsList] = React.useState<Project[]>([])
+  const [projectsList, setProjectsList] = React.useState<Project[]>(initialProjects)
   const [isLoading, setIsLoading] = React.useState(false)
 
   const handleAddProject = async (newProject: Project) => {
