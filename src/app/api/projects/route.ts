@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
-import { connectToDatabase } from '@/app/lib/mongodb'
-import Project from '@/app/models/Project'
 
 // Fallback data for when MongoDB is not available
 const fallbackProjects = [
@@ -45,25 +43,11 @@ const fallbackProjects = [
   }
 ]
 
+// In-memory storage for projects (will reset when server restarts)
+let projects = [...fallbackProjects]
+
 export async function GET() {
-  try {
-    // Try to connect to MongoDB
-    const { db } = await connectToDatabase()
-    
-    if (!db) {
-      // If MongoDB connection fails, return fallback data
-      console.log('Using fallback data')
-      return NextResponse.json(fallbackProjects)
-    }
-    
-    // If MongoDB connection succeeds, fetch projects from the database
-    const projects = await Project.find({}).sort({ createdAt: -1 })
-    return NextResponse.json(projects)
-  } catch (error) {
-    console.error('Error fetching projects:', error)
-    // Return fallback data on error
-    return NextResponse.json(fallbackProjects)
-  }
+  return NextResponse.json(projects)
 }
 
 export async function POST(request: Request) {
@@ -74,15 +58,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const { db } = await connectToDatabase()
-    
-    if (!db) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    const data = await request.json()
+    const newProject = {
+      ...data,
+      _id: Date.now().toString()
     }
     
-    const data = await request.json()
-    const project = await Project.create(data)
-    return NextResponse.json(project, { status: 201 })
+    projects = [newProject, ...projects]
+    return NextResponse.json(newProject, { status: 201 })
   } catch (error) {
     console.error('Error creating project:', error)
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 })
@@ -97,12 +80,6 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const { db } = await connectToDatabase()
-    
-    if (!db) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
-    }
-    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     
@@ -110,7 +87,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
     }
     
-    await Project.findByIdAndDelete(id)
+    projects = projects.filter(project => project._id !== id)
     return NextResponse.json({ message: 'Project deleted successfully' })
   } catch (error) {
     console.error('Error deleting project:', error)
