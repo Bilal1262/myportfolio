@@ -2,14 +2,16 @@
 import React, { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { motion } from 'framer-motion-3d'
-import { Mesh } from 'three'
+import { Mesh, Euler } from 'three'
+import { ThreeElements } from '@react-three/fiber'
 
 export default function RobotModel() {
-  const robotRef = useRef<Mesh>(null)
+  const robotRef = useRef<ThreeElements['mesh']>(null)
 
   useFrame((state) => {
     if (robotRef.current) {
-      robotRef.current.rotation.y += 0.01
+      const rotation = robotRef.current.rotation as Euler
+      rotation.y += 0.01
     }
   })
 
