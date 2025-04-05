@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
+import { connectToDatabase } from '@/app/lib/mongodb'
+import Project, { IProject } from '@/app/models/Project'
 
 // Fallback data for when MongoDB is not available
 const fallbackProjects = [
@@ -43,11 +45,16 @@ const fallbackProjects = [
   }
 ]
 
-// In-memory storage for projects (will reset when server restarts)
-let projects = [...fallbackProjects]
-
 export async function GET() {
-  return NextResponse.json(projects)
+  try {
+    await connectToDatabase()
+    const projects = await Project.find().sort({ createdAt: -1 }).lean()
+    return NextResponse.json(projects)
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+    // Return fallback data if MongoDB is not available
+    return NextResponse.json(fallbackProjects)
+  }
 }
 
 export async function POST(request: Request) {
@@ -58,14 +65,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
+    await connectToDatabase()
     const data = await request.json()
-    const newProject = {
-      ...data,
-      _id: Date.now().toString()
-    }
-    
-    projects = [newProject, ...projects]
-    return NextResponse.json(newProject, { status: 201 })
+    const project = await Project.create(data as Partial<IProject>)
+    return NextResponse.json(project, { status: 201 })
   } catch (error) {
     console.error('Error creating project:', error)
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 })
@@ -87,7 +90,13 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
     }
     
-    projects = projects.filter(project => project._id !== id)
+    await connectToDatabase()
+    const project = await Project.findByIdAndDelete(id).lean()
+    
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+    
     return NextResponse.json({ message: 'Project deleted successfully' })
   } catch (error) {
     console.error('Error deleting project:', error)

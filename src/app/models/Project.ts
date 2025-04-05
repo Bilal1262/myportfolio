@@ -1,4 +1,15 @@
-import mongoose from 'mongoose'
+import mongoose, { Document, Model } from 'mongoose'
+
+export interface IProject extends Document {
+  title: string
+  description: string
+  technologies: string[]
+  image: string
+  category: 'robotics' | 'ai' | 'web'
+  demoLink?: string
+  githubLink?: string
+  createdAt: Date
+}
 
 const ProjectSchema = new mongoose.Schema({
   title: {
@@ -32,4 +43,6 @@ const ProjectSchema = new mongoose.Schema({
   }
 })
 
-export default mongoose.models.Project || mongoose.model('Project', ProjectSchema) 
+const Project: Model<IProject> = mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema)
+
+export default Project 

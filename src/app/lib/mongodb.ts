@@ -16,10 +16,16 @@ export async function connectToDatabase() {
   }
 
   try {
-    await mongoose.connect(MONGODB_URI, {
+    const opts = {
       bufferCommands: false,
-    })
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    }
+
+    await mongoose.connect(MONGODB_URI, opts)
     isConnected = true
+    console.log('MongoDB connected successfully')
     return mongoose
   } catch (error) {
     console.error('MongoDB connection error:', error)
