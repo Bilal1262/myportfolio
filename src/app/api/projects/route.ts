@@ -47,8 +47,11 @@ const fallbackProjects = [
 
 export async function GET() {
   try {
+    console.log('Attempting to connect to MongoDB...')
     await connectToDatabase()
+    console.log('Connected to MongoDB, fetching projects...')
     const projects = await Project.find().sort({ createdAt: -1 }).lean()
+    console.log('Projects fetched:', projects)
     return NextResponse.json(projects)
   } catch (error) {
     console.error('Error fetching projects:', error)
@@ -59,15 +62,21 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    console.log('Checking authentication...')
     const session = await getServerSession(authOptions)
     
     if (!session || session.user.role !== 'admin') {
+      console.log('Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
+    console.log('Connecting to MongoDB...')
     await connectToDatabase()
+    console.log('Connected to MongoDB, creating project...')
     const data = await request.json()
+    console.log('Project data:', data)
     const project = await Project.create(data as Partial<IProject>)
+    console.log('Project created:', project)
     return NextResponse.json(project, { status: 201 })
   } catch (error) {
     console.error('Error creating project:', error)
@@ -77,9 +86,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    console.log('Checking authentication...')
     const session = await getServerSession(authOptions)
     
     if (!session || session.user.role !== 'admin') {
+      console.log('Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
@@ -87,16 +98,21 @@ export async function DELETE(request: Request) {
     const id = searchParams.get('id')
     
     if (!id) {
+      console.log('No project ID provided')
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
     }
     
+    console.log('Connecting to MongoDB...')
     await connectToDatabase()
+    console.log('Connected to MongoDB, deleting project:', id)
     const project = await Project.findByIdAndDelete(id).lean()
     
     if (!project) {
+      console.log('Project not found:', id)
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
     
+    console.log('Project deleted successfully:', id)
     return NextResponse.json({ message: 'Project deleted successfully' })
   } catch (error) {
     console.error('Error deleting project:', error)

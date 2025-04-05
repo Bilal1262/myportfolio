@@ -12,10 +12,12 @@ let isConnected = false
 
 export async function connectToDatabase() {
   if (isConnected) {
+    console.log('Using existing MongoDB connection')
     return mongoose
   }
 
   try {
+    console.log('Connecting to MongoDB...')
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
@@ -29,6 +31,7 @@ export async function connectToDatabase() {
     return mongoose
   } catch (error) {
     console.error('MongoDB connection error:', error)
+    isConnected = false
     throw error
   }
 }
