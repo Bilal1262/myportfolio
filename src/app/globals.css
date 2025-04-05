@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2563eb;
+  --secondary: #4f46e5;
+  --background: #ffffff;
+  --text: #1f2937;
+}
+
+.dark {
+  --primary: #60a5fa;
+  --secondary: #818cf8;
+  --background: #111827;
+  --text: #f3f4f6;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--background)] text-[var(--text)];
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600;
+}
+
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-xl hover:scale-105;
+}
+
+.section-padding {
+  @apply py-20 px-4 sm:px-6 lg:px-8;
+}
+
+.nav-link {
+  @apply relative text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400;
+}
+
+.nav-link::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 dark:bg-blue-400 transition-all duration-300;
+}
+
+.nav-link:hover::after {
+  @apply w-full;
+} 
