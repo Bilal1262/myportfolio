@@ -1,74 +1,110 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Projects from './components/Projects'
+import RobotModel from './components/RobotModel'
+import { getServerSession } from 'next-auth'
+import { connectToDatabase } from './lib/mongodb'
+import { PersonalInfo } from './models/PersonalInfo'
+import { Education } from './models/Education'
 
-export default function Home() {
-  const education = [
-    {
-      degree: "Erasmus Mundus Joint Master",
-      field: "Intelligent Field Robotics of System",
-      institution: "Girona, Spain",
-      date: "10/09/2024 – CURRENT",
-      grade: "9.26 / 10.0",
-      link: "https://ifrosmaster.org/"
-    },
-    {
-      degree: "Bachelor of Mechatronics Engineering",
-      field: "Robotics",
-      institution: "Mehran University of Engineering and Technology Jamshoro",
-      date: "20/10/2018 – 20/10/2022",
-      grade: "3.9/4",
-      modules: "Machine Intelligence, Robotics, Microcontroller and Embedded Systems, Control System, Digital Signal and Image Processing and Mechatronics Systems Design"
-    }
-  ]
+async function getData() {
+  try {
+    await connectToDatabase()
+    const [personalInfo, education] = await Promise.all([
+      PersonalInfo.findOne(),
+      Education.find().sort({ startDate: -1 })
+    ])
+    return { personalInfo: personalInfo || {}, education: education || [] }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+    return { personalInfo: {}, education: [] }
+  }
+}
+
+export default async function Home() {
+  const { personalInfo, education } = await getData()
+  const session = await getServerSession()
 
   return (
-    <main className="min-h-screen">
-      <Navbar />
-      <Hero />
-      
-      {/* Education Section */}
-      <section id="education" className="section-padding bg-gray-50 dark:bg-gray-800">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="max-w-6xl mx-auto"
-        >
-          <h2 className="text-3xl font-bold mb-12 text-center gradient-text">Education</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {education.map((edu, index) => (
-              <motion.div
-                key={edu.degree}
-                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                className="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-lg card-hover"
-              >
-                <h3 className="text-xl font-semibold mb-2">{edu.degree}</h3>
-                <p className="text-blue-600 dark:text-blue-400 mb-4">{edu.institution}</p>
-                <p className="text-gray-600 dark:text-gray-300">{edu.field}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{edu.date}</p>
-                <p className="text-sm font-semibold mt-2">Grade: {edu.grade}</p>
-                {edu.modules && (
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                    Modules: {edu.modules}
-                  </p>
-                )}
-              </motion.div>
-            ))}
+    <main className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-12">
+            <div className="md:w-1/2 mb-8 md:mb-0">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                {personalInfo.name || 'Your Name'}
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
+                {personalInfo.title || 'Your Title'}
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                {personalInfo.bio || 'Your Bio'}
+              </p>
+              <div className="flex space-x-4">
+                <a
+                  href={personalInfo.github || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                >
+                  GitHub
+                </a>
+                <a
+                  href={personalInfo.linkedin || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                >
+                  LinkedIn
+                </a>
+                <a
+                  href={`mailto:${personalInfo.email || ''}`}
+                  className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                >
+                  Email
+                </a>
+              </div>
+            </div>
+            <div className="md:w-1/2 h-[400px]">
+              <Suspense fallback={<div>Loading...</div>}>
+                <RobotModel />
+              </Suspense>
+            </div>
           </div>
-        </motion.div>
-      </section>
 
-      {/* Projects Section */}
-      <Projects />
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Education</h2>
+            <div className="space-y-6">
+              {education.map(edu => (
+                <div
+                  key={edu._id}
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+                >
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    {edu.school}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-2">
+                    {edu.degree} in {edu.field}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-2">
+                    {edu.startDate} - {edu.endDate}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-300">{edu.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Projects</h2>
+            <Projects />
+          </div>
+        </div>
+      </div>
     </main>
   )
 } 
