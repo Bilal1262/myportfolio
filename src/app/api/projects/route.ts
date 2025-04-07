@@ -105,17 +105,26 @@ export async function DELETE(request: Request) {
     console.log('Connecting to MongoDB...')
     await connectToDatabase()
     console.log('Connected to MongoDB, deleting project:', id)
-    const project = await Project.findByIdAndDelete(id).lean()
     
-    if (!project) {
+    // First check if the project exists
+    const existingProject = await Project.findById(id)
+    if (!existingProject) {
       console.log('Project not found:', id)
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
     
+    // Delete the project
+    await Project.findByIdAndDelete(id)
     console.log('Project deleted successfully:', id)
     return NextResponse.json({ message: 'Project deleted successfully' })
   } catch (error) {
     console.error('Error deleting project:', error)
+    // Check if it's a MongoDB error
+    if (error instanceof Error) {
+      if (error.name === 'CastError') {
+        return NextResponse.json({ error: 'Invalid project ID format' }, { status: 400 })
+      }
+    }
     return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 })
   }
 } 
