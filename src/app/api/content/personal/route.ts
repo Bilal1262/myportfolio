@@ -3,14 +3,29 @@ import { getServerSession } from 'next-auth'
 import { connectToDatabase } from '@/app/lib/mongodb'
 import { PersonalInfo, IPersonalInfo } from '@/app/models/PersonalInfo'
 
+// Fallback data for when MongoDB is not available
+const fallbackPersonalInfo = {
+  name: 'Bilal Ahmed Qaimkhani',
+  title: 'Robotics Engineer & AI Enthusiast',
+  bio: 'I am a passionate Robotics Engineer and AI enthusiast with a strong background in software development and machine learning.',
+  email: 'bk632723@gmail.com',
+  location: 'Girona, Spain',
+  github: 'https://github.com/Bilal1262',
+  linkedin: 'https://linkedin.com/in/bilal-ahmed-qaimkhani'
+}
+
 export async function GET() {
   try {
+    console.log('Attempting to connect to MongoDB...')
     await connectToDatabase()
+    console.log('Connected to MongoDB, fetching personal info...')
     const personalInfo = await PersonalInfo.findOne().lean()
-    return NextResponse.json(personalInfo || {})
+    console.log('Personal info fetched:', personalInfo)
+    return NextResponse.json(personalInfo || fallbackPersonalInfo)
   } catch (error) {
     console.error('Error fetching personal info:', error)
-    return NextResponse.json({ error: 'Failed to fetch personal info' }, { status: 500 })
+    // Return fallback data if MongoDB is not available
+    return NextResponse.json(fallbackPersonalInfo)
   }
 }
 

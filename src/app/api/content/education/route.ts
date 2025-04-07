@@ -3,14 +3,40 @@ import { getServerSession } from 'next-auth'
 import { connectToDatabase } from '@/app/lib/mongodb'
 import { Education, IEducation } from '@/app/models/Education'
 
+// Fallback data for when MongoDB is not available
+const fallbackEducation = [
+  {
+    school: 'University of Girona',
+    degree: 'Master',
+    field: 'Robotics and Computer Vision',
+    startDate: '2022',
+    endDate: '2024',
+    description: 'Specializing in robotics, computer vision, and artificial intelligence.',
+    _id: '1'
+  },
+  {
+    school: 'NED University of Engineering and Technology',
+    degree: 'Bachelor',
+    field: 'Electrical Engineering',
+    startDate: '2018',
+    endDate: '2022',
+    description: 'Focus on control systems, electronics, and embedded systems.',
+    _id: '2'
+  }
+]
+
 export async function GET() {
   try {
+    console.log('Attempting to connect to MongoDB...')
     await connectToDatabase()
+    console.log('Connected to MongoDB, fetching education...')
     const education = await Education.find().sort({ startDate: -1 }).lean()
-    return NextResponse.json(education)
+    console.log('Education fetched:', education)
+    return NextResponse.json(education.length > 0 ? education : fallbackEducation)
   } catch (error) {
     console.error('Error fetching education:', error)
-    return NextResponse.json({ error: 'Failed to fetch education' }, { status: 500 })
+    // Return fallback data if MongoDB is not available
+    return NextResponse.json(fallbackEducation)
   }
 }
 

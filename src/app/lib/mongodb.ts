@@ -9,6 +9,7 @@ if (!MONGODB_URI) {
 }
 
 let isConnected = false
+let connectionPromise: Promise<typeof mongoose> | null = null
 
 export async function connectToDatabase() {
   if (isConnected) {
@@ -16,24 +17,49 @@ export async function connectToDatabase() {
     return mongoose
   }
 
+  if (connectionPromise) {
+    console.log('Connection already in progress, waiting...')
+    return connectionPromise
+  }
+
   try {
     console.log('Connecting to MongoDB...')
-    const opts = {
+    connectionPromise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-    }
+      retryWrites: true,
+      retryReads: true,
+    })
 
-    await mongoose.connect(MONGODB_URI, opts)
+    const mongooseInstance = await connectionPromise
     isConnected = true
     console.log('MongoDB connected successfully')
-    return mongoose
+    connectionPromise = null
+    return mongooseInstance
   } catch (error) {
     console.error('MongoDB connection error:', error)
     isConnected = false
+    connectionPromise = null
     throw error
   }
 }
+
+// Handle connection errors
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err)
+  isConnected = false
+})
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected')
+  isConnected = false
+})
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected')
+  isConnected = true
+})
 
 export default connectToDatabase 

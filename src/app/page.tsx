@@ -1,5 +1,3 @@
-'use client'
-
 import React from 'react'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
@@ -19,8 +17,14 @@ export default async function Home() {
 
   try {
     const [personalInfoRes, educationRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/content/personal`, { cache: 'no-store' }),
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/content/education`, { cache: 'no-store' })
+      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/content/personal`, { 
+        cache: 'no-store',
+        next: { revalidate: 0 }
+      }),
+      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/content/education`, { 
+        cache: 'no-store',
+        next: { revalidate: 0 }
+      })
     ])
 
     if (personalInfoRes.ok) {
