@@ -1,9 +1,6 @@
 'use client'
 
-import React, { Suspense } from 'react'
-import { motion } from 'framer-motion'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import React from 'react'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import About from './components/About'
@@ -39,10 +36,10 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
       <Navbar />
-      <Hero />
-      <About />
+      <Hero personalInfo={personalInfo} />
+      <About personalInfo={personalInfo} education={education} />
       <Projects />
-      <Contact />
+      <Contact personalInfo={personalInfo} />
     </main>
   )
 } 

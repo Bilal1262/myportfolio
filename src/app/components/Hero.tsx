@@ -3,11 +3,16 @@
 import React, { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
+import { IPersonalInfo } from '../models/PersonalInfo'
 
 // Dynamically import Three.js components with no SSR
 const ThreeScene = dynamic(() => import('./ThreeScene'), { ssr: false })
 
-export default function Hero() {
+interface HeroProps {
+  personalInfo: Partial<IPersonalInfo>
+}
+
+export default function Hero({ personalInfo }: HeroProps) {
   return (
     <section className="h-screen relative flex items-center justify-center overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Background Animation */}
@@ -31,7 +36,7 @@ export default function Hero() {
           transition={{ duration: 0.8 }}
           className="text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"
         >
-          Bilal Ahmed Qaimkhani
+          {personalInfo.name || 'Bilal Ahmed Qaimkhani'}
         </motion.h1>
 
         <motion.p
@@ -40,7 +45,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8"
         >
-          Robotics Engineer & AI Enthusiast
+          {personalInfo.title || 'Robotics Engineer & AI Enthusiast'}
         </motion.p>
 
         <motion.div
@@ -70,9 +75,9 @@ export default function Hero() {
           transition={{ duration: 1, delay: 0.6 }}
           className="mt-12 flex flex-wrap justify-center gap-6 text-sm text-gray-600 dark:text-gray-400"
         >
-          <span>📍 Girona, Spain</span>
-          <span>📧 bk632723@gmail.com</span>
-          <span>🎓 Erasmus Mundus Joint Master</span>
+          <span>📍 {personalInfo.location || 'Girona, Spain'}</span>
+          <span>📧 {personalInfo.email || 'bk632723@gmail.com'}</span>
+          <span>🎓 {personalInfo.title || 'Erasmus Mundus Joint Master'}</span>
         </motion.div>
       </div>
 
