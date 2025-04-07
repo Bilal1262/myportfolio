@@ -52,7 +52,7 @@ export async function GET() {
     console.log('Connected to MongoDB, fetching projects...')
     const projects = await Project.find().sort({ createdAt: -1 }).lean()
     console.log('Projects fetched:', projects)
-    return NextResponse.json(projects)
+    return NextResponse.json(projects.length > 0 ? projects : fallbackProjects)
   } catch (error) {
     console.error('Error fetching projects:', error)
     // Return fallback data if MongoDB is not available

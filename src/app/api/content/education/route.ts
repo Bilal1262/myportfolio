@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/lib/auth'
 import { connectToDatabase } from '@/app/lib/mongodb'
 import { Education, IEducation } from '@/app/models/Education'
 
@@ -42,15 +43,29 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession()
-    if (!session?.user || session.user.role !== 'admin') {
+    console.log('Checking authentication...')
+    const session = await getServerSession(authOptions)
+    
+    if (!session || session.user.role !== 'admin') {
+      console.log('Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const data = await request.json()
+    
+    console.log('Connecting to MongoDB...')
     await connectToDatabase()
-    const education = await Education.create(data)
-    return NextResponse.json(education)
+    console.log('Connected to MongoDB, creating education entry...')
+    const data = await request.json()
+    console.log('Education data:', data)
+    
+    // Validate required fields
+    if (!data.school || !data.degree || !data.field || !data.startDate || !data.endDate || !data.description) {
+      console.log('Missing required fields')
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+    }
+    
+    const education = await Education.create(data as Partial<IEducation>)
+    console.log('Education entry created:', education)
+    return NextResponse.json(education, { status: 201 })
   } catch (error) {
     console.error('Error creating education:', error)
     return NextResponse.json({ error: 'Failed to create education' }, { status: 500 })
@@ -59,22 +74,45 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession()
-    if (!session?.user || session.user.role !== 'admin') {
+    console.log('Checking authentication...')
+    const session = await getServerSession(authOptions)
+    
+    if (!session || session.user.role !== 'admin') {
+      console.log('Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
+    
     if (!id) {
+      console.log('No education ID provided')
       return NextResponse.json({ error: 'Education ID is required' }, { status: 400 })
     }
-
+    
+    console.log('Connecting to MongoDB...')
     await connectToDatabase()
+    console.log('Connected to MongoDB, deleting education entry:', id)
+    
+    // First check if the education entry exists
+    const existingEducation = await Education.findById(id)
+    if (!existingEducation) {
+      console.log('Education entry not found:', id)
+      return NextResponse.json({ error: 'Education entry not found' }, { status: 404 })
+    }
+    
+    // Delete the education entry
     await Education.findByIdAndDelete(id)
-    return NextResponse.json({ message: 'Education deleted successfully' })
+    console.log('Education entry deleted successfully:', id)
+    return NextResponse.json({ message: 'Education entry deleted successfully' })
   } catch (error) {
     console.error('Error deleting education:', error)
+    // Check if it's a MongoDB error
+    if (error instanceof Error) {
+      if (error.name === 'CastError') {
+        return NextResponse.json({ error: 'Invalid education ID format' }, { status: 400 })
+      }
+    }
     return NextResponse.json({ error: 'Failed to delete education' }, { status: 500 })
   }
 } 
