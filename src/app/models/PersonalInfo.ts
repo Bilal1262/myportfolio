@@ -1,4 +1,16 @@
-import mongoose from 'mongoose'
+import mongoose, { Document, Model } from 'mongoose'
+
+export interface IPersonalInfo extends Document {
+  name: string
+  title: string
+  bio: string
+  email: string
+  location: string
+  github: string
+  linkedin: string
+  createdAt: Date
+  updatedAt: Date
+}
 
 const personalInfoSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -12,4 +24,6 @@ const personalInfoSchema = new mongoose.Schema({
   timestamps: true
 })
 
-export const PersonalInfo = mongoose.models.PersonalInfo || mongoose.model('PersonalInfo', personalInfoSchema) 
+const PersonalInfo: Model<IPersonalInfo> = mongoose.models.PersonalInfo || mongoose.model<IPersonalInfo>('PersonalInfo', personalInfoSchema)
+
+export { PersonalInfo } 

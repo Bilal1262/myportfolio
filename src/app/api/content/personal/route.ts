@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { connectToDatabase } from '@/app/lib/mongodb'
-import { PersonalInfo } from '@/app/models/PersonalInfo'
+import { PersonalInfo, IPersonalInfo } from '@/app/models/PersonalInfo'
 
 export async function GET() {
   try {
     await connectToDatabase()
-    const personalInfo = await PersonalInfo.findOne()
+    const personalInfo = await PersonalInfo.findOne().lean()
     return NextResponse.json(personalInfo || {})
   } catch (error) {
     console.error('Error fetching personal info:', error)

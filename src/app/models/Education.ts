@@ -1,4 +1,15 @@
-import mongoose from 'mongoose'
+import mongoose, { Document, Model } from 'mongoose'
+
+export interface IEducation extends Document {
+  school: string
+  degree: string
+  field: string
+  startDate: string
+  endDate: string
+  description: string
+  createdAt: Date
+  updatedAt: Date
+}
 
 const educationSchema = new mongoose.Schema({
   school: { type: String, required: true },
@@ -11,4 +22,6 @@ const educationSchema = new mongoose.Schema({
   timestamps: true
 })
 
-export const Education = mongoose.models.Education || mongoose.model('Education', educationSchema) 
+const Education: Model<IEducation> = mongoose.models.Education || mongoose.model<IEducation>('Education', educationSchema)
+
+export { Education } 
