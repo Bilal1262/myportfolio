@@ -378,16 +378,25 @@ export default function Projects() {
     }
 
     try {
+      console.log('Attempting to delete project with ID:', id)
       const response = await fetch(`/api/projects?id=${id}`, {
         method: 'DELETE',
       })
 
+      console.log('Delete response status:', response.status)
+      
       if (!response.ok) {
-        throw new Error('Failed to delete project')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Delete error response:', errorData)
+        throw new Error(errorData.error || 'Failed to delete project')
       }
 
+      const result = await response.json()
+      console.log('Delete successful, result:', result)
+      
       setProjects(prev => prev.filter(project => project._id !== id))
     } catch (err) {
+      console.error('Error in handleDeleteProject:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete project')
     }
   }
