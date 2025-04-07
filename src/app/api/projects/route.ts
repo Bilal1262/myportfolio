@@ -103,28 +103,45 @@ export async function DELETE(request: Request) {
     }
     
     console.log('Connecting to MongoDB...')
-    await connectToDatabase()
+    try {
+      await connectToDatabase()
+      console.log('Connected to MongoDB successfully')
+    } catch (dbError) {
+      console.error('MongoDB connection error:', dbError)
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    }
+    
     console.log('Connected to MongoDB, deleting project:', id)
     
     // First check if the project exists
-    const existingProject = await Project.findById(id)
+    let existingProject;
+    try {
+      existingProject = await Project.findById(id)
+      console.log('Project lookup result:', existingProject ? 'Found' : 'Not found')
+    } catch (lookupError) {
+      console.error('Error looking up project:', lookupError)
+      if (lookupError instanceof Error && lookupError.name === 'CastError') {
+        return NextResponse.json({ error: 'Invalid project ID format' }, { status: 400 })
+      }
+      return NextResponse.json({ error: 'Error looking up project' }, { status: 500 })
+    }
+    
     if (!existingProject) {
       console.log('Project not found:', id)
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
     
     // Delete the project
-    await Project.findByIdAndDelete(id)
-    console.log('Project deleted successfully:', id)
-    return NextResponse.json({ message: 'Project deleted successfully' })
-  } catch (error) {
-    console.error('Error deleting project:', error)
-    // Check if it's a MongoDB error
-    if (error instanceof Error) {
-      if (error.name === 'CastError') {
-        return NextResponse.json({ error: 'Invalid project ID format' }, { status: 400 })
-      }
+    try {
+      await Project.findByIdAndDelete(id)
+      console.log('Project deleted successfully:', id)
+      return NextResponse.json({ message: 'Project deleted successfully' })
+    } catch (deleteError) {
+      console.error('Error deleting project:', deleteError)
+      return NextResponse.json({ error: 'Error deleting project from database' }, { status: 500 })
     }
+  } catch (error) {
+    console.error('Unexpected error in DELETE handler:', error)
     return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 })
   }
 } 
