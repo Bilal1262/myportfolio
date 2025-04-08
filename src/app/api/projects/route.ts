@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
+import fs from 'fs'
+import path from 'path'
+
+// File path for storing projects data
+const dataFilePath = path.join(process.cwd(), 'data', 'projects.json')
+
+// Ensure data directory exists
+const ensureDataDir = () => {
+  const dataDir = path.join(process.cwd(), 'data')
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true })
+  }
+}
 
 // Fallback data for projects
-const projects = [
+const fallbackProjects = [
   {
     title: "Robotic Arm Control System",
     description: "A 6-DOF robotic arm control system with inverse kinematics and real-time trajectory planning. Implemented using ROS2 and Python.",
@@ -43,16 +56,41 @@ const projects = [
   }
 ]
 
-// In-memory storage for projects
-let projectStorage = [...projects]
+// Read projects from file
+const readProjectsFromFile = () => {
+  try {
+    ensureDataDir()
+    if (fs.existsSync(dataFilePath)) {
+      const data = fs.readFileSync(dataFilePath, 'utf8')
+      return JSON.parse(data)
+    }
+    return fallbackProjects
+  } catch (error) {
+    console.error('Error reading projects from file:', error)
+    return fallbackProjects
+  }
+}
+
+// Write projects to file
+const writeProjectsToFile = (projects: any[]) => {
+  try {
+    ensureDataDir()
+    fs.writeFileSync(dataFilePath, JSON.stringify(projects, null, 2))
+    return true
+  } catch (error) {
+    console.error('Error writing projects to file:', error)
+    return false
+  }
+}
 
 export async function GET() {
   try {
-    console.log('Fetching projects from memory')
-    return NextResponse.json(projectStorage)
+    console.log('Fetching projects from file')
+    const projects = readProjectsFromFile()
+    return NextResponse.json(projects)
   } catch (error) {
     console.error('Error fetching projects:', error)
-    return NextResponse.json(projects)
+    return NextResponse.json(fallbackProjects)
   }
 }
 
@@ -69,14 +107,23 @@ export async function POST(request: Request) {
     const data = await request.json()
     console.log('Project data:', data)
     
+    // Read current projects
+    const projects = readProjectsFromFile()
+    
     // Generate a new ID
-    const newId = (projectStorage.length + 1).toString()
+    const newId = (projects.length + 1).toString()
     const newProject = { ...data, _id: newId }
     
-    // Add to storage
-    projectStorage.push(newProject)
-    console.log('Project created:', newProject)
+    // Add to projects
+    projects.push(newProject)
     
+    // Write to file
+    const success = writeProjectsToFile(projects)
+    if (!success) {
+      throw new Error('Failed to save project to file')
+    }
+    
+    console.log('Project created:', newProject)
     return NextResponse.json(newProject, { status: 201 })
   } catch (error) {
     console.error('Error creating project:', error)
@@ -104,8 +151,11 @@ export async function DELETE(request: Request) {
     
     console.log('Attempting to delete project:', id)
     
+    // Read current projects
+    const projects = readProjectsFromFile()
+    
     // Find the project index
-    const projectIndex = projectStorage.findIndex(project => project._id === id)
+    const projectIndex = projects.findIndex(project => project._id === id)
     
     if (projectIndex === -1) {
       console.log('Project not found:', id)
@@ -113,9 +163,15 @@ export async function DELETE(request: Request) {
     }
     
     // Remove the project
-    projectStorage = projectStorage.filter(project => project._id !== id)
-    console.log('Project deleted successfully:', id)
+    const updatedProjects = projects.filter(project => project._id !== id)
     
+    // Write to file
+    const success = writeProjectsToFile(updatedProjects)
+    if (!success) {
+      throw new Error('Failed to save projects to file')
+    }
+    
+    console.log('Project deleted successfully:', id)
     return NextResponse.json({ message: 'Project deleted successfully' })
   } catch (error) {
     console.error('Error deleting project:', error)
