@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
+import fs from 'fs'
+import path from 'path'
+
+// File path for storing education data
+const dataFilePath = path.join(process.cwd(), 'data', 'education.json')
+
+// Ensure data directory exists
+const ensureDataDir = () => {
+  const dataDir = path.join(process.cwd(), 'data')
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true })
+  }
+}
 
 // Fallback data for education
-const educationData = [
+const fallbackEducation = [
   {
     school: "University of Girona",
     degree: "Master in Robotics and Computer Vision",
@@ -26,16 +39,41 @@ const educationData = [
   }
 ]
 
-// In-memory storage for education
-let educationStorage = [...educationData]
+// Read education from file
+const readEducationFromFile = () => {
+  try {
+    ensureDataDir()
+    if (fs.existsSync(dataFilePath)) {
+      const data = fs.readFileSync(dataFilePath, 'utf8')
+      return JSON.parse(data)
+    }
+    return fallbackEducation
+  } catch (error) {
+    console.error('Error reading education from file:', error)
+    return fallbackEducation
+  }
+}
+
+// Write education to file
+const writeEducationToFile = (education: any[]) => {
+  try {
+    ensureDataDir()
+    fs.writeFileSync(dataFilePath, JSON.stringify(education, null, 2))
+    return true
+  } catch (error) {
+    console.error('Error writing education to file:', error)
+    return false
+  }
+}
 
 export async function GET() {
   try {
-    console.log('Fetching education from memory')
-    return NextResponse.json(educationStorage)
+    console.log('Fetching education from file')
+    const education = readEducationFromFile()
+    return NextResponse.json(education)
   } catch (error) {
     console.error('Error fetching education:', error)
-    return NextResponse.json(educationData)
+    return NextResponse.json(fallbackEducation)
   }
 }
 
@@ -52,14 +90,23 @@ export async function POST(request: Request) {
     const data = await request.json()
     console.log('Education data:', data)
     
+    // Read current education
+    const education = readEducationFromFile()
+    
     // Generate a new ID
-    const newId = (educationStorage.length + 1).toString()
+    const newId = (education.length + 1).toString()
     const newEducation = { ...data, _id: newId }
     
-    // Add to storage
-    educationStorage.push(newEducation)
-    console.log('Education created:', newEducation)
+    // Add to education
+    education.push(newEducation)
     
+    // Write to file
+    const success = writeEducationToFile(education)
+    if (!success) {
+      throw new Error('Failed to save education to file')
+    }
+    
+    console.log('Education created:', newEducation)
     return NextResponse.json(newEducation, { status: 201 })
   } catch (error) {
     console.error('Error creating education:', error)
@@ -87,8 +134,19 @@ export async function DELETE(request: Request) {
     
     console.log('Attempting to delete education:', id)
     
+    // Read current education
+    let education
+    try {
+      education = readEducationFromFile()
+      console.log('Current education:', education)
+    } catch (error) {
+      console.error('Error reading education file:', error)
+      return NextResponse.json({ error: 'Failed to read education data' }, { status: 500 })
+    }
+    
     // Find the education index
-    const educationIndex = educationStorage.findIndex(edu => edu._id === id)
+    const educationIndex = education.findIndex(edu => edu._id === id)
+    console.log('Education index:', educationIndex)
     
     if (educationIndex === -1) {
       console.log('Education not found:', id)
@@ -96,12 +154,31 @@ export async function DELETE(request: Request) {
     }
     
     // Remove the education
-    educationStorage = educationStorage.filter(edu => edu._id !== id)
-    console.log('Education deleted successfully:', id)
+    const updatedEducation = education.filter(edu => edu._id !== id)
+    console.log('Updated education:', updatedEducation)
     
-    return NextResponse.json({ message: 'Education deleted successfully' })
+    // Write to file
+    try {
+      const success = writeEducationToFile(updatedEducation)
+      if (!success) {
+        throw new Error('Failed to write to education file')
+      }
+      console.log('Education file updated successfully')
+    } catch (error) {
+      console.error('Error writing to education file:', error)
+      return NextResponse.json({ error: 'Failed to update education data' }, { status: 500 })
+    }
+    
+    console.log('Education deleted successfully:', id)
+    return NextResponse.json({ 
+      message: 'Education deleted successfully',
+      deletedEducationId: id
+    })
   } catch (error) {
-    console.error('Error deleting education:', error)
-    return NextResponse.json({ error: 'Failed to delete education' }, { status: 500 })
+    console.error('Error in DELETE handler:', error)
+    return NextResponse.json({ 
+      error: 'Failed to delete education',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 } 
