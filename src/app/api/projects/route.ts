@@ -11,41 +11,70 @@ const dataFilePath = path.join(process.cwd(), 'data', 'projects.json')
 // Fallback data for projects
 const fallbackProjects = [
   {
-    title: "Robotic Arm Control System",
-    description: "A 6-DOF robotic arm control system with inverse kinematics and real-time trajectory planning. Implemented using ROS2 and Python.",
-    technologies: ["ROS2", "Python", "C++", "OpenCV"],
-    image: "/projects/robotic-arm.jpg",
-    githubLink: "https://github.com/yourusername/robotic-arm",
+    title: "MiniGirona - Automated Underwater Vehicle",
+    description: "Project focuses on underwater inspection, localization, and manipulation at the CIRS lab at the University of Girona. Developing algorithms for planning, localization, perception, and intervention. Will participate in an underwater robotics competition.",
+    technologies: ["ROS2", "Python", "Underwater Robotics", "SLAM"],
+    image: "/projects/minigirona.jpg",
     category: "robotics",
     _id: "1"
   },
   {
-    title: "Differential Drive Robot Navigation",
-    description: "Autonomous navigation system for a differential drive robot with LIDAR-based SLAM and obstacle avoidance.",
-    technologies: ["ROS", "Navigation2", "SLAM", "Python"],
-    image: "/projects/diff-drive.jpg",
-    githubLink: "https://github.com/yourusername/diff-drive-robot",
+    title: "SLAM - The Turtlebot using LIDAR in ROS2",
+    description: "Implementation of Simultaneous Localization and Mapping (SLAM) for the TurtleBot. Successfully completed simulation phase and working on ROS2 implementation for real robot deployment.",
+    technologies: ["ROS2", "SLAM", "LIDAR", "Python"],
+    image: "/projects/turtlebot.jpg",
     category: "robotics",
     _id: "2"
   },
   {
-    title: "AI-Powered Object Detection",
-    description: "Real-time object detection system using deep learning, optimized for robotics applications.",
-    technologies: ["PyTorch", "TensorFlow", "CUDA", "Python"],
-    image: "/projects/object-detection.jpg",
-    githubLink: "https://github.com/yourusername/object-detection",
-    category: "ai",
+    title: "Path Planning Simulation",
+    description: "Implementation of various path planning algorithms including Potential Function, Wavefront Planner, A*, RRT and RRT* for optimal robot navigation.",
+    technologies: ["Python", "Path Planning", "RRT", "A*"],
+    image: "/projects/path-planning.jpg",
+    githubLink: "https://drive.google.com/drive/folders/11Ax14OU1zgr5tUh25LctUbYXZz0vCJmb",
+    category: "robotics",
     _id: "3"
   },
   {
-    title: "3D Robot Visualization",
-    description: "Interactive 3D visualization of robotic systems using Three.js and React, featuring real-time animation and control.",
-    technologies: ["React", "Three.js", "TypeScript", "WebGL"],
-    image: "/projects/3d-viz.jpg",
-    demoLink: "https://your-demo-link.com",
-    githubLink: "https://github.com/yourusername/3d-robot-viz",
-    category: "web",
+    title: "Robot Localization using Filters",
+    description: "Implementation of Particle Filter, Kalman Filter and Extended Kalman Filter for robot localization in GPS-denied environments.",
+    technologies: ["Python", "Particle Filter", "Kalman Filter", "Robot Localization"],
+    image: "/projects/localization.jpg",
+    githubLink: "https://drive.google.com/drive/folders/1kmpMVzvTMQfsoiBdNLg0t4_Y-YFhmRYa",
+    category: "robotics",
     _id: "4"
+  },
+  {
+    title: "3D Scanner and 3D Printer Integration",
+    description: "Final Year Project - Integration of 3D printer and 3D scanner at single platform to reduce time during additive manufacturing. Achieved 70% accuracy in object replication.",
+    technologies: ["CAD", "CNC Programming", "LIDAR", "3D Printing"],
+    image: "/projects/3d-scanner-printer.jpg",
+    category: "manufacturing",
+    _id: "5"
+  },
+  {
+    title: "6-Legged Spider Robot for Mining Inspection",
+    description: "Surveillance spider robot for mines and dangerous terrains with terrain sensors, real-time data recording, and wireless communication.",
+    technologies: ["Raspberry Pi", "Servo Control", "Sensor Integration", "3D Printing"],
+    image: "/projects/spider-robot.jpg",
+    category: "robotics",
+    _id: "6"
+  },
+  {
+    title: "One-Legged Hopper in ROS",
+    description: "Development of URDF for Single legged hopper robot with kinematics and mathematical functions for movement control.",
+    technologies: ["ROS", "URDF", "Linux", "Gazebo"],
+    image: "/projects/hopper.jpg",
+    category: "robotics",
+    _id: "7"
+  },
+  {
+    title: "Potato Plant Disease Prediction",
+    description: "Deep Learning model for predicting potato plant diseases with 90% accuracy, classifying early blight, late blight, and healthy conditions.",
+    technologies: ["TensorFlow", "Deep Learning", "CNN", "Python"],
+    image: "/projects/plant-disease.jpg",
+    category: "ai",
+    _id: "8"
   }
 ]
 

@@ -18,15 +18,27 @@ const ensureDataDir = () => {
 // Fallback data for personal info
 const fallbackPersonalInfo = {
   name: "Bilal Ahmed",
-  title: "Full Stack Developer",
-  email: "bilal.ahmed@example.com",
+  title: "Robotics Engineer",
+  email: "bilal.ahmed1262@gmail.com",
+  phone: "+92 300 1234567",
   location: "Lahore, Pakistan",
-  bio: "Passionate about web development and creating beautiful user experiences.",
-  skills: ["React", "Node.js", "TypeScript", "MongoDB", "AWS"],
+  bio: "Passionate Robotics Engineer with expertise in ROS2, SLAM, and autonomous systems. Currently pursuing MSc in Robotics at University of Girona, focusing on underwater robotics and autonomous navigation.",
+  skills: [
+    "ROS2",
+    "Python",
+    "SLAM",
+    "Path Planning",
+    "Robot Localization",
+    "Deep Learning",
+    "Computer Vision",
+    "3D Printing",
+    "CAD",
+    "CNC Programming"
+  ],
   socialLinks: {
     github: "https://github.com/Bilal1262",
     linkedin: "https://linkedin.com/in/bilal-ahmed",
-    twitter: "https://twitter.com/bilal_ahmed"
+    researchgate: "https://www.researchgate.net/profile/Bilal-Ahmed-1262"
   }
 }
 
