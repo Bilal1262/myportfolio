@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
-import { connectToDatabase, checkConnectionStatus } from '@/app/lib/mongodb'
-import Project, { IProject } from '@/app/models/Project'
 
-// Fallback data for when MongoDB is not available
-const fallbackProjects = [
+// Fallback data for projects
+const projects = [
   {
     title: "Robotic Arm Control System",
     description: "A 6-DOF robotic arm control system with inverse kinematics and real-time trajectory planning. Implemented using ROS2 and Python.",
@@ -45,18 +43,16 @@ const fallbackProjects = [
   }
 ]
 
+// In-memory storage for projects
+let projectStorage = [...projects]
+
 export async function GET() {
   try {
-    console.log('Attempting to connect to MongoDB...')
-    await connectToDatabase()
-    console.log('Connected to MongoDB, fetching projects...')
-    const projects = await Project.find().sort({ createdAt: -1 }).lean()
-    console.log('Projects fetched:', projects)
-    return NextResponse.json(projects.length > 0 ? projects : fallbackProjects)
+    console.log('Fetching projects from memory')
+    return NextResponse.json(projectStorage)
   } catch (error) {
     console.error('Error fetching projects:', error)
-    // Return fallback data if MongoDB is not available
-    return NextResponse.json(fallbackProjects)
+    return NextResponse.json(projects)
   }
 }
 
@@ -70,14 +66,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    console.log('Connecting to MongoDB...')
-    await connectToDatabase()
-    console.log('Connected to MongoDB, creating project...')
     const data = await request.json()
     console.log('Project data:', data)
-    const project = await Project.create(data as Partial<IProject>)
-    console.log('Project created:', project)
-    return NextResponse.json(project, { status: 201 })
+    
+    // Generate a new ID
+    const newId = (projectStorage.length + 1).toString()
+    const newProject = { ...data, _id: newId }
+    
+    // Add to storage
+    projectStorage.push(newProject)
+    console.log('Project created:', newProject)
+    
+    return NextResponse.json(newProject, { status: 201 })
   } catch (error) {
     console.error('Error creating project:', error)
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 })
@@ -102,47 +102,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
     }
     
-    console.log('Connecting to MongoDB...')
-    try {
-      await connectToDatabase()
-      console.log('Connected to MongoDB successfully')
-      console.log('Connection status:', checkConnectionStatus())
-    } catch (dbError) {
-      console.error('MongoDB connection error:', dbError)
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
-    }
+    console.log('Attempting to delete project:', id)
     
-    console.log('Connected to MongoDB, deleting project:', id)
+    // Find the project index
+    const projectIndex = projectStorage.findIndex(project => project._id === id)
     
-    // First check if the project exists
-    let existingProject;
-    try {
-      existingProject = await Project.findById(id)
-      console.log('Project lookup result:', existingProject ? 'Found' : 'Not found')
-    } catch (lookupError) {
-      console.error('Error looking up project:', lookupError)
-      if (lookupError instanceof Error && lookupError.name === 'CastError') {
-        return NextResponse.json({ error: 'Invalid project ID format' }, { status: 400 })
-      }
-      return NextResponse.json({ error: 'Error looking up project' }, { status: 500 })
-    }
-    
-    if (!existingProject) {
+    if (projectIndex === -1) {
       console.log('Project not found:', id)
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
     
-    // Delete the project
-    try {
-      await Project.findByIdAndDelete(id)
-      console.log('Project deleted successfully:', id)
-      return NextResponse.json({ message: 'Project deleted successfully' })
-    } catch (deleteError) {
-      console.error('Error deleting project:', deleteError)
-      return NextResponse.json({ error: 'Error deleting project from database' }, { status: 500 })
-    }
+    // Remove the project
+    projectStorage = projectStorage.filter(project => project._id !== id)
+    console.log('Project deleted successfully:', id)
+    
+    return NextResponse.json({ message: 'Project deleted successfully' })
   } catch (error) {
-    console.error('Unexpected error in DELETE handler:', error)
+    console.error('Error deleting project:', error)
     return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 })
   }
 } 
