@@ -152,10 +152,18 @@ export async function DELETE(request: Request) {
     console.log('Attempting to delete project:', id)
     
     // Read current projects
-    const projects = readProjectsFromFile()
+    let projects
+    try {
+      projects = readProjectsFromFile()
+      console.log('Current projects:', projects)
+    } catch (error) {
+      console.error('Error reading projects file:', error)
+      return NextResponse.json({ error: 'Failed to read projects data' }, { status: 500 })
+    }
     
     // Find the project index
     const projectIndex = projects.findIndex(project => project._id === id)
+    console.log('Project index:', projectIndex)
     
     if (projectIndex === -1) {
       console.log('Project not found:', id)
@@ -164,17 +172,30 @@ export async function DELETE(request: Request) {
     
     // Remove the project
     const updatedProjects = projects.filter(project => project._id !== id)
+    console.log('Updated projects:', updatedProjects)
     
     // Write to file
-    const success = writeProjectsToFile(updatedProjects)
-    if (!success) {
-      throw new Error('Failed to save projects to file')
+    try {
+      const success = writeProjectsToFile(updatedProjects)
+      if (!success) {
+        throw new Error('Failed to write to projects file')
+      }
+      console.log('Projects file updated successfully')
+    } catch (error) {
+      console.error('Error writing to projects file:', error)
+      return NextResponse.json({ error: 'Failed to update projects data' }, { status: 500 })
     }
     
     console.log('Project deleted successfully:', id)
-    return NextResponse.json({ message: 'Project deleted successfully' })
+    return NextResponse.json({ 
+      message: 'Project deleted successfully',
+      deletedProjectId: id
+    })
   } catch (error) {
-    console.error('Error deleting project:', error)
-    return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 })
+    console.error('Error in DELETE handler:', error)
+    return NextResponse.json({ 
+      error: 'Failed to delete project',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 } 
