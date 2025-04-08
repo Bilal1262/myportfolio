@@ -23,11 +23,11 @@ export async function connectToDatabase() {
   }
 
   try {
-    console.log('Connecting to MongoDB...')
+    console.log('Connecting to MongoDB with URI:', MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'))
     connectionPromise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000, // Increased timeout
       socketTimeoutMS: 45000,
       retryWrites: true,
       retryReads: true,
@@ -61,5 +61,16 @@ mongoose.connection.on('reconnected', () => {
   console.log('MongoDB reconnected')
   isConnected = true
 })
+
+// Add a function to check connection status
+export function checkConnectionStatus() {
+  return {
+    isConnected,
+    readyState: mongoose.connection.readyState,
+    host: mongoose.connection.host,
+    name: mongoose.connection.name,
+    port: mongoose.connection.port
+  }
+}
 
 export default connectToDatabase 

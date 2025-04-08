@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
-import { connectToDatabase } from '@/app/lib/mongodb'
+import { connectToDatabase, checkConnectionStatus } from '@/app/lib/mongodb'
 import Project, { IProject } from '@/app/models/Project'
 
 // Fallback data for when MongoDB is not available
@@ -106,6 +106,7 @@ export async function DELETE(request: Request) {
     try {
       await connectToDatabase()
       console.log('Connected to MongoDB successfully')
+      console.log('Connection status:', checkConnectionStatus())
     } catch (dbError) {
       console.error('MongoDB connection error:', dbError)
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
