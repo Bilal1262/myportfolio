@@ -1,43 +1,41 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
-import { connectToDatabase } from '@/app/lib/mongodb'
-import { Education, IEducation } from '@/app/models/Education'
 
-// Fallback data for when MongoDB is not available
-const fallbackEducation = [
+// Fallback data for education
+const educationData = [
   {
-    school: 'University of Girona',
-    degree: 'Master',
-    field: 'Robotics and Computer Vision',
-    startDate: '2022',
-    endDate: '2024',
-    description: 'Specializing in robotics, computer vision, and artificial intelligence.',
-    _id: '1'
+    school: "University of Girona",
+    degree: "Master in Robotics and Computer Vision",
+    field: "Robotics and Computer Vision",
+    startDate: "2022-09",
+    endDate: "2024-06",
+    location: "Girona, Spain",
+    description: "Specialized in robotics, computer vision, and AI. Focused on developing autonomous systems and machine learning applications.",
+    _id: "1"
   },
   {
-    school: 'NED University of Engineering and Technology',
-    degree: 'Bachelor',
-    field: 'Electrical Engineering',
-    startDate: '2018',
-    endDate: '2022',
-    description: 'Focus on control systems, electronics, and embedded systems.',
-    _id: '2'
+    school: "NED University of Engineering and Technology",
+    degree: "Bachelor in Electrical Engineering",
+    field: "Electrical Engineering",
+    startDate: "2018-09",
+    endDate: "2022-06",
+    location: "Karachi, Pakistan",
+    description: "Specialized in control systems, electronics, and embedded systems. Developed strong foundation in hardware and software integration.",
+    _id: "2"
   }
 ]
 
+// In-memory storage for education
+let educationStorage = [...educationData]
+
 export async function GET() {
   try {
-    console.log('Attempting to connect to MongoDB...')
-    await connectToDatabase()
-    console.log('Connected to MongoDB, fetching education...')
-    const education = await Education.find().sort({ startDate: -1 }).lean()
-    console.log('Education fetched:', education)
-    return NextResponse.json(education.length > 0 ? education : fallbackEducation)
+    console.log('Fetching education from memory')
+    return NextResponse.json(educationStorage)
   } catch (error) {
     console.error('Error fetching education:', error)
-    // Return fallback data if MongoDB is not available
-    return NextResponse.json(fallbackEducation)
+    return NextResponse.json(educationData)
   }
 }
 
@@ -51,21 +49,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    console.log('Connecting to MongoDB...')
-    await connectToDatabase()
-    console.log('Connected to MongoDB, creating education entry...')
     const data = await request.json()
     console.log('Education data:', data)
     
-    // Validate required fields
-    if (!data.school || !data.degree || !data.field || !data.startDate || !data.endDate || !data.description) {
-      console.log('Missing required fields')
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
-    }
+    // Generate a new ID
+    const newId = (educationStorage.length + 1).toString()
+    const newEducation = { ...data, _id: newId }
     
-    const education = await Education.create(data as Partial<IEducation>)
-    console.log('Education entry created:', education)
-    return NextResponse.json(education, { status: 201 })
+    // Add to storage
+    educationStorage.push(newEducation)
+    console.log('Education created:', newEducation)
+    
+    return NextResponse.json(newEducation, { status: 201 })
   } catch (error) {
     console.error('Error creating education:', error)
     return NextResponse.json({ error: 'Failed to create education' }, { status: 500 })
@@ -90,29 +85,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Education ID is required' }, { status: 400 })
     }
     
-    console.log('Connecting to MongoDB...')
-    await connectToDatabase()
-    console.log('Connected to MongoDB, deleting education entry:', id)
+    console.log('Attempting to delete education:', id)
     
-    // First check if the education entry exists
-    const existingEducation = await Education.findById(id)
-    if (!existingEducation) {
-      console.log('Education entry not found:', id)
-      return NextResponse.json({ error: 'Education entry not found' }, { status: 404 })
+    // Find the education index
+    const educationIndex = educationStorage.findIndex(edu => edu._id === id)
+    
+    if (educationIndex === -1) {
+      console.log('Education not found:', id)
+      return NextResponse.json({ error: 'Education not found' }, { status: 404 })
     }
     
-    // Delete the education entry
-    await Education.findByIdAndDelete(id)
-    console.log('Education entry deleted successfully:', id)
-    return NextResponse.json({ message: 'Education entry deleted successfully' })
+    // Remove the education
+    educationStorage = educationStorage.filter(edu => edu._id !== id)
+    console.log('Education deleted successfully:', id)
+    
+    return NextResponse.json({ message: 'Education deleted successfully' })
   } catch (error) {
     console.error('Error deleting education:', error)
-    // Check if it's a MongoDB error
-    if (error instanceof Error) {
-      if (error.name === 'CastError') {
-        return NextResponse.json({ error: 'Invalid education ID format' }, { status: 400 })
-      }
-    }
     return NextResponse.json({ error: 'Failed to delete education' }, { status: 500 })
   }
 } 

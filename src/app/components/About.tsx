@@ -1,8 +1,10 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { IPersonalInfo } from '../models/PersonalInfo'
 import { IEducation } from '../models/Education'
+import { useSession } from 'next-auth/react'
+import EducationManager from './EducationManager'
 
 interface AboutProps {
   personalInfo: Partial<IPersonalInfo>
@@ -10,6 +12,30 @@ interface AboutProps {
 }
 
 export default function About({ personalInfo, education }: AboutProps) {
+  const { data: session } = useSession()
+  const [educationData, setEducationData] = useState<IEducation[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchEducation()
+  }, [])
+
+  const fetchEducation = async () => {
+    try {
+      const response = await fetch('/api/content/education')
+      const data = await response.json()
+      setEducationData(data)
+    } catch (error) {
+      console.error('Error fetching education:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return <div>Loading education data...</div>
+  }
+
   return (
     <section id="about" className="py-20 bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,7 +62,7 @@ export default function About({ personalInfo, education }: AboutProps) {
           >
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Education</h3>
             <div className="space-y-6">
-              {education.map((edu) => (
+              {educationData.map((edu) => (
                 <div key={edu._id.toString()} className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
                   <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{edu.school}</h4>
                   <p className="text-gray-600 dark:text-gray-300 mb-2">{edu.degree} in {edu.field}</p>
@@ -95,6 +121,13 @@ export default function About({ personalInfo, education }: AboutProps) {
             </div>
           </motion.div>
         </div>
+
+        {/* Admin Controls */}
+        {session?.user && session.user.role === 'admin' && (
+          <div className="mt-12">
+            <EducationManager />
+          </div>
+        )}
       </div>
     </section>
   )
