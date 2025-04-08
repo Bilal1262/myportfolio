@@ -1,19 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
-import fs from 'fs'
 import path from 'path'
+import { readDataFromFile, writeDataToFile } from '@/app/lib/fileSystem'
 
 // File path for storing projects data
 const dataFilePath = path.join(process.cwd(), 'data', 'projects.json')
-
-// Ensure data directory exists
-const ensureDataDir = () => {
-  const dataDir = path.join(process.cwd(), 'data')
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true })
-  }
-}
 
 // Fallback data for projects
 const fallbackProjects = [
@@ -56,37 +48,10 @@ const fallbackProjects = [
   }
 ]
 
-// Read projects from file
-const readProjectsFromFile = () => {
-  try {
-    ensureDataDir()
-    if (fs.existsSync(dataFilePath)) {
-      const data = fs.readFileSync(dataFilePath, 'utf8')
-      return JSON.parse(data)
-    }
-    return fallbackProjects
-  } catch (error) {
-    console.error('Error reading projects from file:', error)
-    return fallbackProjects
-  }
-}
-
-// Write projects to file
-const writeProjectsToFile = (projects: any[]) => {
-  try {
-    ensureDataDir()
-    fs.writeFileSync(dataFilePath, JSON.stringify(projects, null, 2))
-    return true
-  } catch (error) {
-    console.error('Error writing projects to file:', error)
-    return false
-  }
-}
-
 export async function GET() {
   try {
     console.log('Fetching projects from file')
-    const projects = readProjectsFromFile()
+    const projects = readDataFromFile(dataFilePath, fallbackProjects)
     return NextResponse.json(projects)
   } catch (error) {
     console.error('Error fetching projects:', error)
@@ -108,7 +73,7 @@ export async function POST(request: Request) {
     console.log('Project data:', data)
     
     // Read current projects
-    const projects = readProjectsFromFile()
+    const projects = readDataFromFile(dataFilePath, fallbackProjects)
     
     // Generate a new ID
     const newId = (projects.length + 1).toString()
@@ -118,7 +83,7 @@ export async function POST(request: Request) {
     projects.push(newProject)
     
     // Write to file
-    const success = writeProjectsToFile(projects)
+    const success = writeDataToFile(dataFilePath, projects)
     if (!success) {
       throw new Error('Failed to save project to file')
     }
@@ -152,14 +117,8 @@ export async function DELETE(request: Request) {
     console.log('Attempting to delete project:', id)
     
     // Read current projects
-    let projects
-    try {
-      projects = readProjectsFromFile()
-      console.log('Current projects:', projects)
-    } catch (error) {
-      console.error('Error reading projects file:', error)
-      return NextResponse.json({ error: 'Failed to read projects data' }, { status: 500 })
-    }
+    const projects = readDataFromFile(dataFilePath, fallbackProjects)
+    console.log('Current projects:', projects)
     
     // Find the project index
     const projectIndex = projects.findIndex(project => project._id === id)
@@ -175,15 +134,9 @@ export async function DELETE(request: Request) {
     console.log('Updated projects:', updatedProjects)
     
     // Write to file
-    try {
-      const success = writeProjectsToFile(updatedProjects)
-      if (!success) {
-        throw new Error('Failed to write to projects file')
-      }
-      console.log('Projects file updated successfully')
-    } catch (error) {
-      console.error('Error writing to projects file:', error)
-      return NextResponse.json({ error: 'Failed to update projects data' }, { status: 500 })
+    const success = writeDataToFile(dataFilePath, updatedProjects)
+    if (!success) {
+      throw new Error('Failed to write to projects file')
     }
     
     console.log('Project deleted successfully:', id)

@@ -1,19 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
-import fs from 'fs'
 import path from 'path'
+import { readDataFromFile, writeDataToFile } from '@/app/lib/fileSystem'
 
 // File path for storing education data
 const dataFilePath = path.join(process.cwd(), 'data', 'education.json')
-
-// Ensure data directory exists
-const ensureDataDir = () => {
-  const dataDir = path.join(process.cwd(), 'data')
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true })
-  }
-}
 
 // Fallback data for education
 const fallbackEducation = [
@@ -39,37 +31,10 @@ const fallbackEducation = [
   }
 ]
 
-// Read education from file
-const readEducationFromFile = () => {
-  try {
-    ensureDataDir()
-    if (fs.existsSync(dataFilePath)) {
-      const data = fs.readFileSync(dataFilePath, 'utf8')
-      return JSON.parse(data)
-    }
-    return fallbackEducation
-  } catch (error) {
-    console.error('Error reading education from file:', error)
-    return fallbackEducation
-  }
-}
-
-// Write education to file
-const writeEducationToFile = (education: any[]) => {
-  try {
-    ensureDataDir()
-    fs.writeFileSync(dataFilePath, JSON.stringify(education, null, 2))
-    return true
-  } catch (error) {
-    console.error('Error writing education to file:', error)
-    return false
-  }
-}
-
 export async function GET() {
   try {
     console.log('Fetching education from file')
-    const education = readEducationFromFile()
+    const education = readDataFromFile(dataFilePath, fallbackEducation)
     return NextResponse.json(education)
   } catch (error) {
     console.error('Error fetching education:', error)
@@ -91,7 +56,7 @@ export async function POST(request: Request) {
     console.log('Education data:', data)
     
     // Read current education
-    const education = readEducationFromFile()
+    const education = readDataFromFile(dataFilePath, fallbackEducation)
     
     // Generate a new ID
     const newId = (education.length + 1).toString()
@@ -101,7 +66,7 @@ export async function POST(request: Request) {
     education.push(newEducation)
     
     // Write to file
-    const success = writeEducationToFile(education)
+    const success = writeDataToFile(dataFilePath, education)
     if (!success) {
       throw new Error('Failed to save education to file')
     }
@@ -135,14 +100,8 @@ export async function DELETE(request: Request) {
     console.log('Attempting to delete education:', id)
     
     // Read current education
-    let education
-    try {
-      education = readEducationFromFile()
-      console.log('Current education:', education)
-    } catch (error) {
-      console.error('Error reading education file:', error)
-      return NextResponse.json({ error: 'Failed to read education data' }, { status: 500 })
-    }
+    const education = readDataFromFile(dataFilePath, fallbackEducation)
+    console.log('Current education:', education)
     
     // Find the education index
     const educationIndex = education.findIndex(edu => edu._id === id)
@@ -158,15 +117,9 @@ export async function DELETE(request: Request) {
     console.log('Updated education:', updatedEducation)
     
     // Write to file
-    try {
-      const success = writeEducationToFile(updatedEducation)
-      if (!success) {
-        throw new Error('Failed to write to education file')
-      }
-      console.log('Education file updated successfully')
-    } catch (error) {
-      console.error('Error writing to education file:', error)
-      return NextResponse.json({ error: 'Failed to update education data' }, { status: 500 })
+    const success = writeDataToFile(dataFilePath, updatedEducation)
+    if (!success) {
+      throw new Error('Failed to write to education file')
     }
     
     console.log('Education deleted successfully:', id)
