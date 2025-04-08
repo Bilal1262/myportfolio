@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/lib/auth'
 import path from 'path'
 import { readDataFromFile, writeDataToFile } from '@/app/lib/fileSystem'
+import fs from 'fs'
 
 // File path for storing projects data
 const dataFilePath = path.join(process.cwd(), 'data', 'projects.json')
@@ -47,6 +48,29 @@ const fallbackProjects = [
     _id: "4"
   }
 ]
+
+// Initialize file with fallback data if it doesn't exist
+const initializeProjectsFile = () => {
+  try {
+    const dataDir = path.join(process.cwd(), 'data')
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true })
+    }
+    
+    const filePath = path.join(dataDir, 'projects.json')
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, JSON.stringify(fallbackProjects, null, 2))
+      console.log('Initialized projects.json with fallback data')
+    }
+    return true
+  } catch (error) {
+    console.error('Error initializing projects file:', error)
+    return false
+  }
+}
+
+// Call initialization on module load
+initializeProjectsFile()
 
 export async function GET() {
   try {
@@ -115,6 +139,9 @@ export async function DELETE(request: Request) {
     }
     
     console.log('Attempting to delete project:', id)
+    
+    // Ensure file exists
+    initializeProjectsFile()
     
     // Read current projects
     const projects = readDataFromFile(dataFilePath, fallbackProjects)
